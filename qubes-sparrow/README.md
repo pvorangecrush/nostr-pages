@@ -124,7 +124,7 @@ To Launch Sparrow Wallet: Press ```[Ctrl+Alt+S]```
 #### Configure Sparrow to use sys-whonix torsocks proxy
 + Choose the Server tab (bottom):
 + Choose [Type:] Private Electrum
-+ Enter your Umbrel or Dojo or other Electrum [URL:] ````**************.onion```
++ Enter your Umbrel or Dojo or other Electrum [URL:] ```**************.onion```
 + Open Sparrow Wallet preferences: Press ```[Ctrl+P]```
 + Toggle on [Use Proxy:]
 + Set [Proxy URL:] localhost   9050
