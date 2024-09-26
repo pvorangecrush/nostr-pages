@@ -1,4 +1,4 @@
-module github.com/pvorangecrush/nostr-pages/poster/ad-bot1
+module github.com/pvorangecrush/ad-bot1
 
 go 1.23.1
 

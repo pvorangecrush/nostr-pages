@@ -1,6 +1,7 @@
 package main
 
 import (
+    "time"
     "fmt"
     "context"
     "os/exec"
@@ -32,9 +33,9 @@ func main() {
 
     directory := "/home/user/build/nostr-pages"
     file := directory + "/.well-known/nostr.json"
-    sed_cmd := fmt.Sprintf(`/names/c\  "names": {\n    "%s":"%s",`, new_id, pk)
-    fmt.Println("sed", "-i", sed_cmd, file)
-    cmd :=exec.Command("sed", "-i", sed_cmd, file)
+    file2 := directory + "/poster/posts.json"
+
+    cmd :=exec.Command("git", "pull")
     cmd.Dir = directory
     cmd.Stdout = os.Stdout
     cmd.Stderr = os.Stderr
@@ -42,6 +43,21 @@ func main() {
     if err != nil {
         log.Fatalf("cmd.Run () failed with %s\n", err)
     }
+    time.Sleep(10 * time.Second)
+
+    // Add new identity to nostr.json
+    sed_cmd := fmt.Sprintf(`/names/c\  "names": {\n    "%s":"%s",`, new_id, pk)
+    fmt.Println("sed", "-i", sed_cmd, file)
+    cmd =exec.Command("sed", "-i", sed_cmd, file)
+    cmd.Dir = directory
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
+    err = cmd.Run()
+    if err != nil {
+        log.Fatalf("cmd.Run () failed with %s\n", err)
+    }
+
+    // Add nostr.json to commit
     cmd =exec.Command("git", "add", "-A")
     cmd.Dir = directory
     cmd.Stdout = os.Stdout
@@ -50,6 +66,8 @@ func main() {
     if err != nil {
         log.Fatalf("cmd.Run () failed with %s\n", err)
     }
+
+    // Commit update to nostr.json
     cmd =exec.Command("git", "commit", "-m", "updated nostr.json")
     cmd.Dir = directory
     cmd.Stdout = os.Stdout
@@ -58,6 +76,8 @@ func main() {
     if err != nil {
         log.Fatalf("cmd.Run () failed with %s\n", err)
     }
+
+    // Push update to remote repository so that github-pages will publish
     cmd =exec.Command("git", "push")
     cmd.Dir = directory
     cmd.Stdout = os.Stdout
@@ -66,14 +86,20 @@ func main() {
     if err != nil {
         log.Fatalf("cmd.Run () failed with %s\n", err)
     }
+    time.Sleep(5 * time.Second)
 
+    // Print keys for reference
     fmt.Println("sk:", sk)
     fmt.Println("pk:", pk)
     fmt.Println(nsec)
     fmt.Println(npub)
     fmt.Println(new_id)
-    newPost := advertiseRelay()
+
+    // Prep a post from posts.json
+    newPost := advertiseRelay(file2)
     fmt.Println(newPost)
+
+    // Prep TextNote ad event
     ev := nostr.Event{
         PubKey:    pk,
         CreatedAt: nostr.Now(),
@@ -82,6 +108,7 @@ func main() {
         Content:   newPost,
     }
 
+    // Prep Metadata Event object
     var profileMetadata ProfileMetadata
     profileMetadata.Name = new_id
     profileMetadata.DisplayName = "Orange Crush Relay Ad Bot " + new_id
@@ -101,6 +128,7 @@ func main() {
         fmt.Println(err)
     }
 
+    // Prep Metadata Event
     meta_ev := nostr.Event{
         PubKey:     pk,
         CreatedAt:  nostr.Now(),
@@ -113,9 +141,9 @@ func main() {
     ev.Sign(sk)
     meta_ev.Sign(sk)
 
-    // publish the event to two relays
+    // publish the event to relays
     ctx := context.Background()
-    for _, url := range []string{"wss://relay.nostr.band", "wss://relay.mutinywallet.com"} {
+    for _, url := range []string{"wss://relay.nostr.band", "wss://relay.mutinywallet.com", "wss://purplerelay.com", "wss://relay.damus.io", "wss://relay.snort.social"} {
         relay, err := nostr.RelayConnect(ctx, url)
         if err != nil {
             fmt.Println(err)
@@ -128,7 +156,7 @@ func main() {
 
         fmt.Printf("published metadata note to %s\n", url)
     }
-    for _, url := range []string{"wss://relay.nostr.band", "wss://relay.mutinywallet.com"} {
+    for _, url := range []string{"wss://relay.nostr.band", "wss://relay.mutinywallet.com", "wss://purplerelay.com", "wss://relay.damus.io", "wss://relay.snort.social"} {
         relay, err := nostr.RelayConnect(ctx, url)
         if err != nil {
             fmt.Println(err)

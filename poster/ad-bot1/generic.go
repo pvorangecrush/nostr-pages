@@ -3,10 +3,9 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
-	"net/http"
-	"time"
 	"golang.org/x/exp/rand"
 	"log"
+	"os"
 )
 
 type Posts struct {
@@ -18,30 +17,15 @@ type Image string
 
 type Link string
 
-func advertiseRelay() string {
-	url:= "https://raw.githubusercontent.com/pvorangecrush/nostr-pages/refs/heads/main/poster/posts.json"
-
-	postClient := http.Client{
-		Timeout: time.Second * 2,
-	}
-
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+func advertiseRelay(file string) string {
+	jsonFile, err := os.Open(file)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	req.Header.Set("User-Agent", "nostr-ad-bot")
+	defer jsonFile.Close()
 
-	res, getErr := postClient.Do(req)
-	if getErr != nil {
-		log.Fatal(getErr)
-	}
-
-	if res.Body != nil {
-		defer res.Body.Close()
-	}
-
-	body, readErr := ioutil.ReadAll(res.Body)
+	body, readErr := ioutil.ReadAll(jsonFile)
 	if  readErr != nil {
 		log.Fatal(readErr)
 	}
